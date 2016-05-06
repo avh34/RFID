@@ -1,9 +1,9 @@
-import RFID
+import MFRC522
 import signal
 import time
 
 run = True
-rdr = RFID.RFID()
+rdr = MFRC522.MFRC522()
 util = rdr.util()
 util.debug = True
 

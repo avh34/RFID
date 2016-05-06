@@ -1,4 +1,4 @@
-import RFID
+import MFRC522
 
 class RFIDUtil:
     rfid = None
@@ -20,7 +20,8 @@ class RFIDUtil:
 
     def sector_string(self, block_address):
         """
-        Returns sector and it's block representation of block address, eg. S01B03 for sector trailer in second sector
+        Returns sector and it's block representation of block address,
+        eg. S01B03 for sector trailer in second sector
         """
         return "S" + str((block_address - (block_address % 4)) / 4) + "B" + str(block_address % 4)
 
@@ -89,7 +90,8 @@ class RFIDUtil:
     def write_trailer(self, sector, key_a=(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF), auth_bits=(0xFF, 0x07, 0x80), 
                       user_data=0x69, key_b=(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)):
         """
-        Writes sector trailer of specified sector. Tag and auth must be set - does auth.
+        Writes sector trailer of specified sector. Tag and auth must be set -
+        does auth.
         If value is None, value of byte is kept.
         Returns error state.
         """
@@ -98,7 +100,8 @@ class RFIDUtil:
 
     def rewrite(self, block_address, new_bytes):
         """
-        Rewrites block with new bytes, keeping the old ones if None is passed. Tag and auth must be set - does auth.
+        Rewrites block with new bytes, keeping the old ones if None is passed.
+        Tag and auth must be set - does auth.
         Returns error state.
         """
         if not self.is_tag_set_auth():
@@ -123,7 +126,8 @@ class RFIDUtil:
 
     def read_out(self, block_address):
         """
-        Prints sector/block number and contents of block. Tag and auth must be set - does auth.
+        Prints sector/block number and contents of block. Tag and auth must be
+         set - does auth.
         """
         if not self.is_tag_set_auth():
             return True
