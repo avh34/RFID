@@ -70,7 +70,7 @@ class MFRC522:
     def __init__( self, pin_rst = 22 ):
         self.pin_rst = pin_rst
 
-        self.spi = spi.MFRC522_SPI()
+        self.spi = spi.MFRC522_SPI(0, 0)
 
         GPIO.setmode( GPIO.BOARD        )
         GPIO.setup  ( pin_rst, GPIO.OUT )
@@ -99,6 +99,29 @@ class MFRC522:
         else:
             self.spi.clr_bits(reg.TX_CONTROL, 0x03)
 
+
+    def authenticate( self, block_addr, key, ser_num ):
+
+        irq_wait = IRQ_IDLE | IRQ_RX | IRQ_TIMER
+
+        self.spi.write   ( reg.COMMAND, self.PCD_IDLE )
+        self.spi.clr_bits( reg.COM_IRQ,          0x80 )
+        self.spi.set_bits( reg.FIFO_LEVEL,       0x80 )
+
+        data = [0x60] + block_addr + key + ser_num
+        for datum in data:
+            self.spi.write(reg.FIFO_DATA, datum)
+
+        self.spi.write(reg.COMMAND, self.PCD_AUTH)
+
+        irq = 0x00
+        while not (irq & irq_wait):
+            irq = self.spi.read(reg.COM_IRQ)
+
+        if irq & IRQ_TIMER:
+            return True
+
+
     def card_write( self,  data ):
         back_data = []
         back_len  = 0
@@ -106,7 +129,6 @@ class MFRC522:
 
         irq_wait = IRQ_IDLE | IRQ_RX | IRQ_TIMER
 
-        self.spi.write   ( reg.COMMAND,    self.PCD_IDLE )
         self.spi.clr_bits( reg.COM_IRQ,             0x80 )
         self.spi.set_bits( reg.FIFO_LEVEL,          0x80 )
 
@@ -119,28 +141,21 @@ class MFRC522:
         irq = 0x00
         while not ( irq & irq_wait ):
             irq = self.spi.read( reg.COM_IRQ )
-            #print "TIMER   = 0x" + format(self.spi.read(reg.T_COUNTER_VAL_H), '02x')+ format(self.spi.read(reg.T_COUNTER_VAL_L), '02x')
-            #print "COM_IRQ = 0x" + format(n, '02x')
+
+        self.spi.write(reg.COMMAND, self.PCD_IDLE)
 
         if irq & IRQ_TIMER:
             return True, back_data, back_len
 
-
-        # print "COMMAND = 0x" + format( self.spi.read( reg.COMMAND ), '02x' )
-        # Unnecessary, clears by itself
-        # print "BIT_FRAMING = 0x" + format( self.spi.read( reg.BIT_FRAMING ), '02x' )
-        # self.spi.clr_bits( reg.BIT_FRAMING, 0x80 )
-
-        #print "ERROR = 0x" + format( self.spi.read( reg.ERROR ), '02x' )
         if self.spi.read( reg.ERROR ):
             return True, back_data, back_len
 
         byte_num  = self.spi.read( reg.FIFO_LEVEL )
         last_bits = self.spi.read( reg.CONTROL    ) & 0x07
-        if last_bits is 0:
+        if last_bits is 0x00:
             back_len = byte_num * 8
         else:
-            back_len = (byte_num - 1) * 8 + last_bits
+            back_len = ( byte_num - 1 ) * 8 + last_bits
 
         byte_num = min( self.length, byte_num )
 
@@ -154,7 +169,7 @@ class MFRC522:
 
         self.spi.write( reg.BIT_FRAMING, 0x07 )
 
-        (error, back_data, back_bits) = self.card_write( [req_mode ] )
+        (error, back_data, back_bits) = self.card_write( [req_mode] )
 
         if error or (back_bits != 0x10):
             return True, None

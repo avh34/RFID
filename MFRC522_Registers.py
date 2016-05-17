@@ -50,7 +50,7 @@ RESERVED_1E     = 0x1E
 SERIAL_SPEED    = 0x1F
 
 
-## Congiuration Registers ######################################################
+## Configuration Registers #####################################################
 RESERVED_20     = 0x20
 CRC_RESULT_H    = 0x21
 CRC_RESULT_L    = 0x22
